@@ -1,12 +1,14 @@
-import axios from "axios";
+import axios from "../api/axiosInstance";
 
 export default function EmbedButton({ chunks, setStored }) {
   const handleStoreEmbeddings = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/transcript/embed-store", { chunks });
+      const res = await axios.post("/embed-store", { chunks });
       if (res.data.status === "success") {
         setStored(true);
         alert(`Stored ${res.data.stored} chunks.`);
+      } else if (res.data.status === "duplicate") {
+        alert(res.data.message);
       }
     } catch (err) {
       alert("Failed to store embeddings.");

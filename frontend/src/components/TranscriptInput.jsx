@@ -1,10 +1,10 @@
-import axios from "axios";
+import axios from "../api/axiosInstance";
 
 export default function TranscriptInput({ url, setUrl, setChunks, setStored }) {
   const handleFetchTranscript = async () => {
     setStored(false);
     try {
-      const res = await axios.post("http://localhost:8000/api/transcript/fetch", { url });
+      const res = await axios.post("/fetch", { url });
       setChunks(res.data);
     } catch (err) {
       alert("Failed to fetch transcript");

@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import TranscriptInput from "./components/TranscriptInput";
 import TranscriptViewer from "./components/TranscriptViewer";
 import EmbedButton from "./components/EmbedButton";
+import { initializeSession } from "./api/axiosInstance";
 
 function App() {
   const [url, setUrl] = useState("");
   const [chunks, setChunks] = useState([]);
   const [stored, setStored] = useState(false);
+
+  useEffect(() => {
+    initializeSession();
+  }, []);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
