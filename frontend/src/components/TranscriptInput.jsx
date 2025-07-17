@@ -1,39 +1,29 @@
-import { useState } from 'react';
-import { fetchTranscript } from '../api/transcript';
+import axios from "axios";
 
-export default function TranscriptInput() {
-  const [url, setUrl] = useState('');
-  const [chunks, setChunks] = useState([]);
-
-  const handleSubmit = async () => {
-    const result = await fetchTranscript(url);
-    setChunks(result);
+export default function TranscriptInput({ url, setUrl, setChunks, setStored }) {
+  const handleFetchTranscript = async () => {
+    setStored(false);
+    try {
+      const res = await axios.post("http://localhost:8000/api/transcript/fetch", { url });
+      setChunks(res.data);
+    } catch (err) {
+      alert("Failed to fetch transcript");
+      console.error(err);
+    }
   };
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
+    <div className="mb-4">
       <input
         type="text"
-        value={url}
-        onChange={e => setUrl(e.target.value)}
-        placeholder="Paste YouTube URL"
+        placeholder="Paste YouTube video URL..."
         className="border p-2 w-full rounded mb-2"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
       />
-      <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded">
-        Get Transcript
+      <button onClick={handleFetchTranscript} className="bg-blue-600 text-white px-4 py-2 rounded">
+        Fetch Transcript
       </button>
-
-      {chunks.length > 0 && (
-        <div className="mt-4">
-          <h2 className="text-lg font-semibold">Transcript Chunks:</h2>
-          {chunks.map((chunk, index) => (
-            <div key={index} className="border-b py-2">
-              <p><strong>{chunk.start.toFixed(1)}s - {chunk.end.toFixed(1)}s:</strong></p>
-              <p>{chunk.text}</p>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
