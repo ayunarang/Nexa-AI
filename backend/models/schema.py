@@ -11,3 +11,7 @@ class TranscriptChunk(BaseModel):
 
 class ChunkEmbeddingRequest(BaseModel):
     chunks: list[TranscriptChunk]
+
+
+class ClearSessionRequest(BaseModel):
+    session_id: str

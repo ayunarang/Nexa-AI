@@ -12,3 +12,5 @@ app.add_middleware(
 )
 
 app.include_router(transcript.router, prefix="/api/transcript")
+
+
