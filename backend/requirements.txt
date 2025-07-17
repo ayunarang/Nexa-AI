@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+youtube-transcript-api
+pydantic
+
+sentence-transformers
+faiss-cpu
+scikit-learn
+joblib
+tinydb
