@@ -44,4 +44,4 @@ def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
             "text": current_chunk.strip()
         })
 
-    return chunks
+    return chunks , video_id

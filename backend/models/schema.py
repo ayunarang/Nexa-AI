@@ -7,3 +7,7 @@ class TranscriptChunk(BaseModel):
     start: float
     end: float
     text: str
+    video_id: str 
+
+class ChunkEmbeddingRequest(BaseModel):
+    chunks: list[TranscriptChunk]

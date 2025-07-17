@@ -14,9 +14,12 @@ venv/
 *.egg-info/
 *.egg
 
-# SQLite or TinyDB local storage 
+# TinyDB local storage 
 *.db
 *.json
+
+# FAISS vector index
+*.faiss
 
 # Logs
 *.log
