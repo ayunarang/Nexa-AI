@@ -4,7 +4,7 @@ export default function TranscriptInput({ url, setUrl, setChunks, setStored }) {
   const handleFetchTranscript = async () => {
     setStored(false);
     try {
-      const res = await axios.post("/fetch", { url });
+      const res = await axios.post("/transcript/fetch", { url });
       setChunks(res.data);
     } catch (err) {
       alert("Failed to fetch transcript");

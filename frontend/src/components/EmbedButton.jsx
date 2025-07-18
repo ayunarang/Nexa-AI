@@ -3,7 +3,7 @@ import axios from "../api/axiosInstance";
 export default function EmbedButton({ chunks, setStored }) {
   const handleStoreEmbeddings = async () => {
     try {
-      const res = await axios.post("/embed-store", { chunks });
+      const res = await axios.post("/transcript/embed-store", { chunks });
       if (res.data.status === "success") {
         setStored(true);
         alert(`Stored ${res.data.stored} chunks.`);
