@@ -6,6 +6,7 @@ from vector_store.faiss_store import add_to_index
 from uuid import uuid4
 from session_store import init_session, clear_session, get_session_index, get_session_metadata
 
+
 import traceback  
 
 router = APIRouter()
@@ -25,7 +26,6 @@ def fetch_transcript(data: TranscriptRequest, session_id: str = Query(None)):
 
 @router.post("/embed-store")
 def embed_and_store(data: ChunkEmbeddingRequest, session_id: str = Query(...)):
-    from session_store import get_session_index, get_session_metadata
 
     try:
 
