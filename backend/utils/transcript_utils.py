@@ -1,10 +1,6 @@
 import os
 import tempfile
 from urllib.parse import urlparse, parse_qs
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
-from webvtt import read as read_vtt
-import yt_dlp
-
 
 def extract_video_id(url: str) -> str:
     parsed_url = urlparse(url)
@@ -42,6 +38,9 @@ def normalize_transcript_data(raw_data):
 
 def fetch_transcript_from_api(video_id: str):
     try:
+        from youtube_transcript_api import YouTubeTranscriptApi
+        from youtube_transcript_api._errors import NoTranscriptFound, TranscriptsDisabled
+
         transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
         try:
             return normalize_transcript_data(transcripts.find_transcript(['en']).fetch())
@@ -52,22 +51,43 @@ def fetch_transcript_from_api(video_id: str):
         except Exception:
             pass
         raise RuntimeError("The video is not in English.")
-    except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript):
+    except Exception:
         return None
 
 
+def fetch_duration(video_id: str) -> float:
+    from yt_dlp import YoutubeDL
+    try:
+        with YoutubeDL({'quiet': True}) as ydl:
+            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
+            return info.get("duration", 0)
+    except Exception:
+        return 0
+
+
 def fetch_transcript_from_webvtt(video_id: str):
+    # Duration gate to avoid downloading huge videos
+    if fetch_duration(video_id) > 1800:  # 30 minutes
+        print(f"Video {video_id} is too long. Skipping fallback.")
+        return None
+
+    import yt_dlp
+    from webvtt import read as read_vtt
+
     with tempfile.TemporaryDirectory() as tmpdir:
         output_path = os.path.join(tmpdir, f"{video_id}.vtt")
         try:
             ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
                 'skip_download': True,
                 'writesubtitles': True,
+                'writeautomaticsub': True,
                 'subtitleslangs': ['en'],
                 'subtitlesformat': 'vtt',
                 'outtmpl': os.path.join(tmpdir, '%(id)s.%(ext)s'),
-                'quiet': True,
-                'no_warnings': True,
+                'noplaylist': True,
+                'cachedir': False,
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -110,28 +130,28 @@ def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
         raise RuntimeError("Transcript not available via API or fallback.")
 
     chunks = []
-    current_chunk = ""
-    current_start = transcript_data[0].get("start", 0)
+    current_chunk_parts = []
+    current_start = transcript_data[0]["start"]
     chunk_end = current_start + chunk_duration
 
     for entry in transcript_data:
-        if entry.get("start", 0) < chunk_end:
-            current_chunk += " " + entry["text"]
+        if entry["start"] < chunk_end:
+            current_chunk_parts.append(entry["text"])
         else:
             chunks.append({
                 "start": current_start,
                 "end": chunk_end,
-                "text": current_chunk.strip()
+                "text": " ".join(current_chunk_parts).strip()
             })
             current_start = entry["start"]
             chunk_end = current_start + chunk_duration
-            current_chunk = entry["text"]
+            current_chunk_parts = [entry["text"]]
 
-    if current_chunk:
+    if current_chunk_parts:
         chunks.append({
             "start": current_start,
             "end": chunk_end,
-            "text": current_chunk.strip()
+            "text": " ".join(current_chunk_parts).strip()
         })
 
     return chunks, video_id
