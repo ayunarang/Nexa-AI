@@ -1,35 +1,60 @@
 import axios from "axios";
+import { toast } from "sonner";
 
-// Create instance for all backend API routes
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:8000/api", // Unified base for /transcript and /search
+  baseURL: "http://localhost:8000/api", 
 });
 
-// Setup session management
 const initSession = async () => {
   const existing = sessionStorage.getItem("yt_session_id");
   if (existing) return existing;
 
-  const res = await axiosInstance.get("/transcript/init-session");
-  const sessionId = res.data.session_id;
-  sessionStorage.setItem("yt_session_id", sessionId);
-  return sessionId;
+  try {
+    const res = await axiosInstance.get("/transcript/init-session");
+    const sessionId = res.data.session_id;
+    sessionStorage.setItem("yt_session_id", sessionId);
+    return sessionId;
+  } catch (err) {
+    toast.error("Something went wrong while initializing session.");
+    throw err;
+  }
 };
 
-// Attach session_id to all requests (via query param)
 const setupAxiosInterceptor = () => {
-  axiosInstance.interceptors.request.use((config) => {
-    const sessionId = sessionStorage.getItem("yt_session_id");
-    if (sessionId) {
+  axiosInstance.interceptors.request.use(
+    (config) => {
+      const sessionId = sessionStorage.getItem("yt_session_id");
+      if (!sessionId) {
+        toast.error("Missing session ID. Try reloading.");
+        return Promise.reject({
+          message: "Missing session ID. Try reloading.",
+          isSessionError: true, 
+        });
+      }
+
       const url = new URL(config.url, window.location.origin);
       url.searchParams.set("session_id", sessionId);
       config.url = url.pathname + url.search;
+
+      return config;
+    },
+    (error) => {
+      toast.error("Something went wrong with the request.");
+      return Promise.reject(error);
     }
-    return config;
-  });
+  );
+
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (!error?.isSessionError) {
+        toast.error("Something went wrong with the response.");
+      }
+      return Promise.reject(error);
+    }
+  );
 };
 
-// Handle tab unload: clear session on server
 const setupUnloadHandler = () => {
   window.addEventListener("beforeunload", () => {
     const sessionId = sessionStorage.getItem("yt_session_id");
