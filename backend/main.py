@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import transcript, search
+from routers import transcript, search, create
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -19,6 +19,8 @@ def root():
 
 app.include_router(transcript.router, prefix="/api/transcript")
 app.include_router(search.router, prefix="/api/search")
+app.include_router(create.router, prefix="/api/timestamps")
+
 
 
 

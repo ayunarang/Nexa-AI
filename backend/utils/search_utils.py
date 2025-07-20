@@ -18,7 +18,7 @@ def normalize_scores(scores):
     ]
 
 
-def search_chunks(session_id: str, video_id: str, query: str, top_k: int = 3, min_score_threshold: float = 1.0,
+def search_chunks(session_id: str, video_id: str, query: str, top_k: int = 2, min_score_threshold: float = 1.0,
                   semantic_weight: float = 0.7, keyword_weight: float = 0.3):
 
     index = get_session_index(session_id)

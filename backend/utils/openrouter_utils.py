@@ -4,23 +4,19 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
 load_dotenv()
-
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-MODEL = "openrouter/auto"
 
-# Initialize the LLM once
+MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"  # or mistralai/mistral-small-24b-instruct-2501:free
+
 llm = ChatOpenAI(
     openai_api_base="https://openrouter.ai/api/v1",
     openai_api_key=OPENROUTER_API_KEY,
     model=MODEL,
     temperature=0.3,
-    max_tokens=400
+    max_tokens=1000
 )
 
 def call_openrouter(prompt: str) -> str:
-    """
-    Calls OpenRouter using LangChain and returns the response content.
-    """
     try:
         response = llm.invoke([HumanMessage(content=prompt)])
         return response.content.strip() if response and response.content else "No response from model."

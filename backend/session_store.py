@@ -10,7 +10,8 @@ def init_session(session_id: str):
         if session_id not in session_store:
             session_store[session_id] = {
                 "faiss_index": get_faiss_index(),
-                "metadata": {}
+                "metadata": {},
+                "timestamps": {},
             }
 
 def clear_session(session_id: str):
@@ -24,3 +25,7 @@ def get_session_index(session_id: str):
 def get_session_metadata(session_id: str):
     init_session(session_id)
     return session_store[session_id]["metadata"]
+
+def get_session_timestamps(session_id: str):
+    init_session(session_id)
+    return session_store[session_id]["timestamps"]

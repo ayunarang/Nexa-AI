@@ -1,14 +1,13 @@
 from pydantic import BaseModel
-from typing import List, Literal
+from typing import List, Literal, Optional
 
 class TranscriptRequest(BaseModel):
     url: str
 
+
 class TranscriptChunk(BaseModel):
-    start: float
-    end: float
-    text: str
-    video_id: str 
+    status: Literal["Success", "Duplicate"]
+    video_id: Optional[str] = None
 
 class ChunkEmbeddingRequest(BaseModel):
     chunks: list[TranscriptChunk]
@@ -31,3 +30,7 @@ class EnhancedSearchResult(BaseModel):
     answer: str
     timestamps: list[TimestampedSummary]
     confidence: Literal["high", "medium", "low"]
+
+
+class TimestampRequest(BaseModel):
+    videoId: str
