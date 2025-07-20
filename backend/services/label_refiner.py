@@ -9,7 +9,7 @@ def prepare_openrouter_prompt(chunks):
         prompt_lines.append(f"[{start:.1f}s-{end:.1f}s] Label: {chunk['label']} | Text: \"{sample_text}\"")
 
     return f"""
-You are an AI agent tasked with refining labeled, timestamped segments from a YouTube transcript. A traditional classifier has generated rough labels, which may be vague, incorrect, or repetitive.
+You are an AI agent tasked with refining labeled, timestamped segments from a YouTube transcript. A traditional classifier has generated rough labels, which may be vague, incorrect, or repetitive. The end result should be AT MAX 12-14 total labels with timestamps.
 
 Your task is to correct, rename, and group labels while following these strict rules:
 

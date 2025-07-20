@@ -19,21 +19,18 @@ def enforce_intro_outro_rules(chunks):
     intro_chunks = []
     outro_chunks = []
 
-    # Forcefully label first and last as Intro and Outro
     chunks[0]["label"] = "Intro"
     intro_chunks.append(chunks[0])
 
     chunks[-1]["label"] = "Outro"
     outro_chunks.append(chunks[-1])
 
-    # Refine intro with second chunk if matched
     if len(chunks) > 1 and is_intro(chunks[1]["text"]):
         chunks[1]["label"] = "Intro"
         intro_chunks.append(chunks[1])
 
-    # Refine outro with second last chunk if matched
     if len(chunks) > 2 and is_outro(chunks[-2]["text"]):
         chunks[-2]["label"] = "Outro"
-        outro_chunks.insert(0, chunks[-2])  # maintain order
+        outro_chunks.insert(0, chunks[-2])  
 
     return chunks, intro_chunks, outro_chunks

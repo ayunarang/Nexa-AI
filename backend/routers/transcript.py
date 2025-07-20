@@ -43,7 +43,10 @@ def fetch_transcript_and_store(data: TranscriptRequest, session_id: str = Query(
 
     except Exception as e:
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        if str(e) == "The video is not in English.":
+            raise HTTPException(status_code=400, detail="The video is not in English.")
+        raise HTTPException(status_code=500, detail="Internal server error.")
+
 
 
 @router.get("/init-session")
