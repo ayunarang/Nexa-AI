@@ -26,7 +26,11 @@ export default function TranscriptInput({
       console.error(err);
       if (err.response?.status === 400 && err.response?.data?.detail === "The video is not in English.") {
         setError("This video is not in English. Right now Nexa AI only supports videos with english audio.");
-      } else {
+      }
+      else if (err.response?.status === 400 && err.response?.data?.detail === "The video does not have subtitles.") {
+        setError("This video does not have subtitles. Nexa AI uses subtitles to analyze video content.");
+      }
+      else {
         setError("URL invalid or server error. Please check the URL or try again.");
       }
     } finally {
