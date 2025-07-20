@@ -5,9 +5,16 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 
+origins = [
+    "http://localhost:5173",                   
+    "http://127.0.0.1:5173",                  
+    "https://your-frontend.vercel.com",      
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust in prod
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
