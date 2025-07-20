@@ -37,13 +37,15 @@ export default function App() {
 
       <section className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 items-start justify-between">
         <div className="flex-1 w-full">
-          <div className="bg-[#151526] md:p-6 p-4 rounded-2xl shadow-lg border border-[#292946] space-y-4">
+          <div className="bg-[#151526] md:p-6 p-4 rounded-2xl shadow-lg border border-[#292946] space-y-1 md:space-y-0">
             <TranscriptInput
               url={url}
               setUrl={setUrl}
               setSuccess={setSuccess}
               setVideoId={setVideoId}
               setLoading={setLoading}
+              loading={loading}
+              success={success}
             />
 
             <div className="relative min-h-[150px]">

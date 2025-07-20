@@ -5,7 +5,6 @@ function PlaceholderOverlay() {
     <div className="absolute inset-0 bg-[rgba(216,180,254,0.2)] border-4 border-purple-700 rounded-2xl flex items-center justify-center shadow-lg transition-opacity duration-700 ease-in-out">
       <div
         className="w-14 h-14 bg-white/40 text-purple-700/40 flex items-center justify-center rounded-full"
-        aria-label="Click to play"
       >
         <svg
           className="w-10 h-10 ml-1"

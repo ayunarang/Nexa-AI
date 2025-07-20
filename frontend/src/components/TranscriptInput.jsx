@@ -1,19 +1,34 @@
 import axios from "../api/axiosInstance";
 import { useState } from "react";
 
-export default function TranscriptInput({ url, setUrl, setSuccess, setVideoId, setLoading }) {
+export default function TranscriptInput({
+  url,
+  setUrl,
+  setSuccess,
+  setVideoId,
+  setLoading,
+  loading,
+  success
+}) {
   const [error, setError] = useState("");
 
   const handleFetchTranscript = async () => {
+    if (loading) return;
+
     setLoading(true);
     setError("");
+
     try {
       const res = await axios.post("/transcript/fetch", { url });
       setSuccess(res.data.status);
       setVideoId(res.data.video_id);
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch transcript. Please check the URL.");
+      if (err.response?.status === 400 && err.response?.data?.detail === "The video is not in English.") {
+        setError("This video is not in English. Right now Nexa AI only supports videos with english audio.");
+      } else {
+        setError("URL invalid or server error. Please check the URL or try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -33,24 +48,26 @@ export default function TranscriptInput({ url, setUrl, setSuccess, setVideoId, s
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           aria-label="YouTube Video URL"
+          disabled={loading}
         />
         <button
           onClick={handleFetchTranscript}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 md:py-3 text-sm md:px-5 px-3 rounded-lg transition whitespace-nowrap"
+          disabled={loading}
+          className={`${loading ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
+            } text-white font-semibold py-2 md:py-3 text-sm md:px-5 px-3 rounded-lg transition whitespace-nowrap`}
           aria-label="Fetch transcript for video URL"
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleFetchTranscript();
-          }}
         >
-          Try URL
+          {loading ? "Loading..." : "Try URL"}
         </button>
       </div>
 
-      {error && (
-        <p className="mt-2 text-sm text-red-400" role="alert">
-          {error}
+      {!success && !loading &&
+        <p className={`mt-2 text-sm text-red-400 ${error ? "visible" : "invisible"}`} role="alert">
+          {error || "placeholder text"}
         </p>
-      )}
+      }
+
+
     </div>
   );
 }
