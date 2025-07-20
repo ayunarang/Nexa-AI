@@ -45,7 +45,10 @@ def fetch_transcript_and_store(data: TranscriptRequest, session_id: str = Query(
         traceback.print_exc()
         if str(e) == "The video is not in English.":
             raise HTTPException(status_code=400, detail="The video is not in English.")
+        elif str(e)== "Transcript not available via API or fallback.":
+            raise HTTPException(status_code=400, detail="The video does not have subtitles.")
         raise HTTPException(status_code=500, detail="Internal server error.")
+
 
 
 

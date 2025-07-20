@@ -1,9 +1,12 @@
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
+import os
+import tempfile
 from urllib.parse import urlparse, parse_qs
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript
+from webvtt import read as read_vtt
+import yt_dlp
 
 
 def extract_video_id(url: str) -> str:
-    """Extracts the video ID from any YouTube URL format."""
     parsed_url = urlparse(url)
     hostname = (parsed_url.hostname or '').lower()
     path = parsed_url.path
@@ -27,7 +30,6 @@ def extract_video_id(url: str) -> str:
 
 
 def normalize_transcript_data(raw_data):
-    """Converts transcript entries to a uniform dictionary format."""
     return [
         {
             'text': getattr(entry, 'text', ''),
@@ -38,36 +40,74 @@ def normalize_transcript_data(raw_data):
     ]
 
 
-def fetch_transcript_data(video_id: str):
-    """Fetches and returns English transcript data if available."""
+def fetch_transcript_from_api(video_id: str):
     try:
         transcripts = YouTubeTranscriptApi.list_transcripts(video_id)
-
-        # 1. Manual English transcript
         try:
-            transcript = transcripts.find_transcript(['en'])
-            return normalize_transcript_data(transcript.fetch())
+            return normalize_transcript_data(transcripts.find_transcript(['en']).fetch())
         except (NoTranscriptFound, TranscriptsDisabled):
             pass
-
-        # 2. Auto-generated English transcript
         try:
-            auto_transcript = transcripts.find_generated_transcript(['en'])
-            return normalize_transcript_data(auto_transcript.fetch())
+            return normalize_transcript_data(transcripts.find_generated_transcript(['en']).fetch())
         except Exception:
             pass
-
         raise RuntimeError("The video is not in English.")
+    except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript):
+        return None
 
-    except (TranscriptsDisabled, NoTranscriptFound, CouldNotRetrieveTranscript) as e:
-        print(f"[Transcript API error]: {e}")
-        raise RuntimeError("Transcript not available for this video.")
+
+def fetch_transcript_from_webvtt(video_id: str):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = os.path.join(tmpdir, f"{video_id}.vtt")
+        try:
+            ydl_opts = {
+                'skip_download': True,
+                'writesubtitles': True,
+                'subtitleslangs': ['en'],
+                'subtitlesformat': 'vtt',
+                'outtmpl': os.path.join(tmpdir, '%(id)s.%(ext)s'),
+                'quiet': True,
+                'no_warnings': True,
+            }
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
+
+            transcript = []
+            for caption in read_vtt(output_path):
+                start_seconds = time_str_to_seconds(caption.start)
+                end_seconds = time_str_to_seconds(caption.end)
+                duration = end_seconds - start_seconds
+                transcript.append({
+                    "start": start_seconds,
+                    "duration": duration,
+                    "text": caption.text.replace('\n', ' ')
+                })
+
+            return transcript
+        except Exception as e:
+            print(f"[WebVTT Fallback Error]: {e}")
+            return None
+
+
+def time_str_to_seconds(time_str):
+    h, m, s = time_str.replace(',', '.').split(':')
+    return float(h) * 3600 + float(m) * 60 + float(s)
+
+
+def fetch_transcript_data(video_id: str):
+    transcript = fetch_transcript_from_api(video_id)
+    if transcript:
+        return transcript
+    return fetch_transcript_from_webvtt(video_id)
 
 
 def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
-    """Main function: fetches transcript for URL and chunks it."""
     video_id = extract_video_id(url)
     transcript_data = fetch_transcript_data(video_id)
+
+    if not transcript_data:
+        raise RuntimeError("Transcript not available via API or fallback.")
 
     chunks = []
     current_chunk = ""
