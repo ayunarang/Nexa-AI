@@ -1,6 +1,9 @@
 import os
-import tempfile
+import requests
 from urllib.parse import urlparse, parse_qs
+
+SCRAPINGDOG_API_KEY = os.getenv("SCRAPINGDOG_API_KEY")  
+ENVIRONMENT = os.getenv("ENV", "development") 
 
 def extract_video_id(url: str) -> str:
     parsed_url = urlparse(url)
@@ -36,6 +39,28 @@ def normalize_transcript_data(raw_data):
     ]
 
 
+def fetch_transcript_from_scrapingdog(video_id: str):
+    url = "https://api.scrapingdog.com/youtube/transcripts/"
+    params = {
+        "api_key": SCRAPINGDOG_API_KEY,
+        "v": video_id,
+        "language": "en",
+        "country": "us"
+    }
+
+    try:
+        response = requests.get(url, params=params, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("transcripts", [])
+        else:
+            print(f"[ScrapingDog] Failed with status {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"[ScrapingDog] Error: {e}")
+        return None
+
+
 def fetch_transcript_from_api(video_id: str):
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
@@ -55,71 +80,11 @@ def fetch_transcript_from_api(video_id: str):
         return None
 
 
-def fetch_duration(video_id: str) -> float:
-    from yt_dlp import YoutubeDL
-    try:
-        with YoutubeDL({'quiet': True}) as ydl:
-            info = ydl.extract_info(f"https://www.youtube.com/watch?v={video_id}", download=False)
-            return info.get("duration", 0)
-    except Exception:
-        return 0
-
-
-def fetch_transcript_from_webvtt(video_id: str):
-    # Duration gate to avoid downloading huge videos
-    if fetch_duration(video_id) > 1800:  # 30 minutes
-        print(f"Video {video_id} is too long. Skipping fallback.")
-        return None
-
-    import yt_dlp
-    from webvtt import read as read_vtt
-
-    with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = os.path.join(tmpdir, f"{video_id}.vtt")
-        try:
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'skip_download': True,
-                'writesubtitles': True,
-                'writeautomaticsub': True,
-                'subtitleslangs': ['en'],
-                'subtitlesformat': 'vtt',
-                'outtmpl': os.path.join(tmpdir, '%(id)s.%(ext)s'),
-                'noplaylist': True,
-                'cachedir': False,
-            }
-
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([f"https://www.youtube.com/watch?v={video_id}"])
-
-            transcript = []
-            for caption in read_vtt(output_path):
-                start_seconds = time_str_to_seconds(caption.start)
-                end_seconds = time_str_to_seconds(caption.end)
-                duration = end_seconds - start_seconds
-                transcript.append({
-                    "start": start_seconds,
-                    "duration": duration,
-                    "text": caption.text.replace('\n', ' ')
-                })
-
-            return transcript
-        except Exception as e:
-            print(f"[WebVTT Fallback Error]: {e}")
-            return None
-
-
-def time_str_to_seconds(time_str):
-    h, m, s = time_str.replace(',', '.').split(':')
-    return float(h) * 3600 + float(m) * 60 + float(s)
-
-
 def fetch_transcript_data(video_id: str):
-    transcript = fetch_transcript_from_api(video_id)
-    if transcript:
-        return transcript
-    return fetch_transcript_from_webvtt(video_id)
+    if ENVIRONMENT == "production":
+        return fetch_transcript_from_scrapingdog(video_id)
+    else:
+        return fetch_transcript_from_api(video_id)
 
 
 def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
@@ -127,7 +92,7 @@ def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
     transcript_data = fetch_transcript_data(video_id)
 
     if not transcript_data:
-        raise RuntimeError("Transcript not available via API or fallback.")
+        raise RuntimeError("Transcript not available.")
 
     chunks = []
     current_chunk_parts = []
