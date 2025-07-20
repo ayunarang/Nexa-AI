@@ -8,7 +8,7 @@ app = FastAPI()
 origins = [
     "http://localhost:5173",                   
     "http://127.0.0.1:5173",                  
-    "https://go-nexa-ai.vercel.app/",      
+    "https://go-nexa-ai.vercel.app",      
 ]
 
 app.add_middleware(
