@@ -6,11 +6,11 @@ import { Toaster } from 'sonner'
 
 createRoot(document.getElementById('root')).render(
 
-  // <StrictMode>
-  <>
-    <Toaster position="top-center" richColors />
+  <StrictMode>
+    <>
+      <Toaster position="top-center" richColors />
 
-    <App />
-  </>
-  // </StrictMode>,
+      <App />
+    </>
+  </StrictMode>
 )
