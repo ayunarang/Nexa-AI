@@ -1,9 +1,12 @@
 import os
 import requests
 from urllib.parse import urlparse, parse_qs
+import time
 
 SCRAPINGDOG_API_KEY = os.getenv("SCRAPINGDOG_API_KEY")  
 ENVIRONMENT = os.getenv("ENV", "development") 
+
+
 
 def extract_video_id(url: str) -> str:
     parsed_url = urlparse(url)
@@ -39,7 +42,7 @@ def normalize_transcript_data(raw_data):
     ]
 
 
-def fetch_transcript_from_scrapingdog(video_id: str):
+def fetch_transcript_from_scrapingdog(video_id: str, retries: int = 3, delay: int = 2):
     url = "https://api.scrapingdog.com/youtube/transcripts/"
     params = {
         "api_key": SCRAPINGDOG_API_KEY,
@@ -48,17 +51,28 @@ def fetch_transcript_from_scrapingdog(video_id: str):
         "country": "us"
     }
 
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("transcripts", [])
-        else:
-            print(f"[ScrapingDog] Failed with status {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"[ScrapingDog] Error: {e}")
-        return None
+    for attempt in range(1, retries + 1):
+        try:
+            response = requests.get(url, params=params, timeout=20)
+            print(f"[ScrapingDog] Attempt {attempt} - Status: {response.status_code}")
+
+            if response.status_code == 200:
+                return response.json().get("transcripts", [])
+
+            # Don't retry on 4xx client errors (except 429 - rate limit)
+            if 400 <= response.status_code < 500 and response.status_code != 429:
+                print(f"[ScrapingDog] Client error: {response.status_code}")
+                break
+
+        except Exception as e:
+            print(f"[ScrapingDog] Error on attempt {attempt}: {e}")
+
+        if attempt < retries:
+            time.sleep(delay)
+
+    return None
+
+
 
 
 def fetch_transcript_from_api(video_id: str):
