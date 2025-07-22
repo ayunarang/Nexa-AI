@@ -118,7 +118,7 @@ You are a smart assistant helping users search YouTube videos using transcript c
             }
 
         except json.JSONDecodeError:
-            print("❌ Failed to parse GPT response as JSON.")
+            print("Failed to parse GPT response as JSON.")
             return {
                 "answer": gpt_response.strip(),
                 "timestamps": [

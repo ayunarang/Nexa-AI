@@ -1,11 +1,10 @@
 import os
+import time
 import requests
 from urllib.parse import urlparse, parse_qs
-import time
 
 SCRAPINGDOG_API_KEY = os.getenv("SCRAPINGDOG_API_KEY")  
 ENVIRONMENT = os.getenv("ENV", "development") 
-
 
 
 def extract_video_id(url: str) -> str:
@@ -23,7 +22,6 @@ def extract_video_id(url: str) -> str:
         query_params = parse_qs(parsed_url.query)
         if "v" in query_params:
             return query_params["v"][0]
-
         for prefix in ["/embed/", "/v/", "/shorts/"]:
             if path.startswith(prefix):
                 return path.split("/")[2]
@@ -43,6 +41,9 @@ def normalize_transcript_data(raw_data):
 
 
 def fetch_transcript_from_scrapingdog(video_id: str, retries: int = 3, delay: int = 2):
+    if not SCRAPINGDOG_API_KEY:
+        raise EnvironmentError("Missing SCRAPINGDOG_API_KEY in environment variables.")
+
     url = "https://api.scrapingdog.com/youtube/transcripts/"
     params = {
         "api_key": SCRAPINGDOG_API_KEY,
@@ -55,24 +56,20 @@ def fetch_transcript_from_scrapingdog(video_id: str, retries: int = 3, delay: in
         try:
             response = requests.get(url, params=params, timeout=20)
             print(f"[ScrapingDog] Attempt {attempt} - Status: {response.status_code}")
-
             if response.status_code == 200:
-                return response.json().get("transcripts", [])
+                raw = response.json().get("transcripts", [])
+                return normalize_transcript_data(raw)
 
-            # Don't retry on 4xx client errors (except 429 - rate limit)
             if 400 <= response.status_code < 500 and response.status_code != 429:
-                print(f"[ScrapingDog] Client error: {response.status_code}")
                 break
 
-        except Exception as e:
-            print(f"[ScrapingDog] Error on attempt {attempt}: {e}")
+        except Exception:
+            pass
 
         if attempt < retries:
             time.sleep(delay)
 
     return None
-
-
 
 
 def fetch_transcript_from_api(video_id: str):
@@ -103,8 +100,8 @@ def fetch_transcript_data(video_id: str):
 
 def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
     video_id = extract_video_id(url)
-    transcript_data = fetch_transcript_data(video_id)
 
+    transcript_data = fetch_transcript_data(video_id)
     if not transcript_data:
         raise RuntimeError("Transcript not available.")
 
@@ -114,7 +111,8 @@ def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
     chunk_end = current_start + chunk_duration
 
     for entry in transcript_data:
-        if entry["start"] < chunk_end:
+        start = entry["start"]
+        if start < chunk_end:
             current_chunk_parts.append(entry["text"])
         else:
             chunks.append({
@@ -122,7 +120,7 @@ def fetch_and_chunk_transcript(url: str, chunk_duration: float = 30.0):
                 "end": chunk_end,
                 "text": " ".join(current_chunk_parts).strip()
             })
-            current_start = entry["start"]
+            current_start = start
             chunk_end = current_start + chunk_duration
             current_chunk_parts = [entry["text"]]
 

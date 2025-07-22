@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Query
-from models.schema import TranscriptRequest, TranscriptChunk
+from models.schema import TranscriptRequest, TranscriptChunk, ClearSessionRequest
 from utils.transcript_utils import fetch_and_chunk_transcript
 from session_store import init_session, clear_session, get_session_index, get_session_metadata
 from uuid import uuid4
@@ -21,7 +21,6 @@ def fetch_transcript_and_store(data: TranscriptRequest, session_id: str = Query(
         from vector_store.embedder import embed_texts
         texts = [chunk['text'] for chunk in chunks]
         embeddings = embed_texts(texts)
-
         from vector_store.faiss_store import add_to_index
         index = get_session_index(session_id)
         ids = add_to_index(index, embeddings)
@@ -45,12 +44,9 @@ def fetch_transcript_and_store(data: TranscriptRequest, session_id: str = Query(
         traceback.print_exc()
         if str(e) == "The video is not in English.":
             raise HTTPException(status_code=400, detail="The video is not in English.")
-        elif str(e)== "Transcript not available via API or fallback.":
+        elif str(e) == "Transcript not available.":
             raise HTTPException(status_code=400, detail="The video does not have subtitles.")
         raise HTTPException(status_code=500, detail="Internal server error.")
-
-
-
 
 @router.get("/init-session")
 def init_new_session():
@@ -62,11 +58,10 @@ def init_new_session():
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @router.post("/clear-session")
-def clear_user_session(data: dict):
+def clear_user_session(data: ClearSessionRequest):
     try:
-        session_id = data.get("session_id")
+        session_id = data.session_id
         clear_session(session_id)
         return {"status": "cleared", "session_id": session_id}
     except Exception as e:
