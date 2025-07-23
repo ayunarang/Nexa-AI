@@ -1,17 +1,13 @@
-from sentence_transformers import SentenceTransformer
+import requests
 from typing import List
 
-_model = None
+EMBEDDER_URL = "https://embedder-service.onrender.com/embed"  
 
-def embed_texts(texts: List[str], batch_size: int = 16) -> List[List[float]]:
-    global _model
-    if _model is None:
-        _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-
-    embeddings = []
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i:i+batch_size]
-        batch_embeddings = _model.encode(batch, show_progress_bar=False).tolist()
-        embeddings.extend(batch_embeddings)
-    
-    return embeddings
+def embed_texts(texts: List[str]) -> List[List[float]]:
+    try:
+        response = requests.post(EMBEDDER_URL, json={"texts": texts})
+        response.raise_for_status()
+        return response.json()["embeddings"]
+    except Exception as e:
+        print("Error embedding text:", str(e))
+        return []
