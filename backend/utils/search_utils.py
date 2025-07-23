@@ -64,5 +64,4 @@ def search_chunks(session_id: str, video_id: str, query: str, top_k: int = 2, mi
         })
 
     results.sort(key=lambda r: r["score"], reverse=True)
-    print("results from util", results)
     return results[:top_k]

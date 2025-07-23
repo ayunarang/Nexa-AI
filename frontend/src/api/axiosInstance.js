@@ -5,21 +5,6 @@ const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
 });
 
-const initSession = async () => {
-  const existing = sessionStorage.getItem("yt_session_id");
-  if (existing) return existing;
-
-  try {
-    const res = await axiosInstance.get("/transcript/init-session");
-    const sessionId = res.data.session_id;
-    sessionStorage.setItem("yt_session_id", sessionId);
-    return sessionId;
-  } catch (err) {
-    toast.error("Something went wrong while initializing session.");
-    throw err;
-  }
-};
-
 const setupAxiosInterceptor = () => {
   axiosInstance.interceptors.request.use(
     (config) => {
@@ -74,10 +59,8 @@ const setupUnloadHandler = () => {
 };
 
 export const initializeSession = async () => {
-  const sessionId = await initSession();
   setupAxiosInterceptor();
   setupUnloadHandler();
-  return sessionId;
 };
 
 export default axiosInstance;

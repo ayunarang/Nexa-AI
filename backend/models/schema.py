@@ -7,7 +7,8 @@ class TranscriptRequest(BaseModel):
 
 class TranscriptChunk(BaseModel):
     status: Literal["Success", "Duplicate"]
-    video_id: Optional[str] = None
+    video_id: str
+    session_id: str
 
 class ChunkEmbeddingRequest(BaseModel):
     chunks: list[TranscriptChunk]

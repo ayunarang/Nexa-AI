@@ -53,7 +53,6 @@ You are a smart assistant helping users search YouTube videos using transcript c
 """
 
         gpt_response = call_openrouter(prompt)
-        print("OpenRouter Response:", gpt_response)
 
         # Strip Markdown code block if present
         match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", gpt_response, re.DOTALL)

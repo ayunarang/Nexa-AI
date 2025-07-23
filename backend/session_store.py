@@ -6,7 +6,7 @@ import time
 session_store = LRUCache(maxsize=5)
 session_lock = Lock()
 
-SESSION_TTL_SECONDS = 600
+SESSION_TTL_SECONDS = 600  # 10 minutes
 
 def clean_expired_sessions():
     with session_lock:
@@ -18,11 +18,13 @@ def clean_expired_sessions():
         for session_id in expired_keys:
             session_store.pop(session_id, None)
 
-
 def init_session(session_id: str):
+
     clean_expired_sessions()
+
     with session_lock:
         if session_id not in session_store:
+
             session_store[session_id] = {
                 "faiss_index": get_faiss_index(),
                 "metadata": {},
@@ -31,17 +33,21 @@ def init_session(session_id: str):
             }
 
 def clear_session(session_id: str):
+
     with session_lock:
         session_store.pop(session_id, None)
 
 def get_session_index(session_id: str):
+
     init_session(session_id)
     return session_store[session_id]["faiss_index"]
 
 def get_session_metadata(session_id: str):
+
     init_session(session_id)
     return session_store[session_id]["metadata"]
 
 def get_session_timestamps(session_id: str):
+
     init_session(session_id)
     return session_store[session_id]["timestamps"]

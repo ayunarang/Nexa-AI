@@ -1,4 +1,4 @@
-import axios from "../api/axiosInstance";
+import axios from "axios";
 import { useState } from "react";
 
 export default function TranscriptInput({
@@ -19,7 +19,10 @@ export default function TranscriptInput({
     setError("");
 
     try {
-      const res = await axios.post("/transcript/fetch", { url });
+      const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/transcript/fetch`, { url });
+      const sessionId = res.data.session_id;
+      sessionStorage.setItem("yt_session_id", sessionId);
+
       setSuccess(res.data.status);
       setVideoId(res.data.video_id);
     } catch (err) {

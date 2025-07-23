@@ -11,14 +11,13 @@ import { Bot } from "lucide-react";
 export default function App() {
   const [url, setUrl] = useState("");
   const [success, setSuccess] = useState(false);
-  const [sessionId, setSessionId] = useState(null);
   const [videoId, setVideoId] = useState(null);
   const [player, setPlayer] = useState(null);
   const [activeAction, setActiveAction] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    initializeSession().then(setSessionId);
+    initializeSession();
   }, []);
 
   const handleTimestampsClick = () => {
