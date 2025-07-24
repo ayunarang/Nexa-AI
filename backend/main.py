@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 origins = [
     "http://localhost:5173",                   

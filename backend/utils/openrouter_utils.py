@@ -1,12 +1,10 @@
 import os
-from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
-load_dotenv()
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
-MODEL = "mistralai/mistral-small-3.2-24b-instruct:free"  # or mistralai/mistral-small-24b-instruct-2501:free
+MODEL = "mistralai/mistral-small-3.2-24b-instruct:free" 
 
 llm = ChatOpenAI(
     openai_api_base="https://openrouter.ai/api/v1",
