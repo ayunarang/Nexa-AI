@@ -72,7 +72,7 @@ export default function App() {
 
               )}
 
-              {loading && <LoaderBot message="Fetching video" />}
+              {loading && <LoaderBot message="Analyzing your video, please wait" />}
 
               {!loading && (success === "Success" || success === "Duplicate") && (
                 <div className="mt-10">
