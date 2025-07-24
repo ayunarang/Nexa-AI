@@ -77,12 +77,13 @@ Data:
 {chr(10).join(prompt_lines)}
 """
 
+
 def parse_openrouter_labels(openrouter_response: str):
     refined = []
     lines = openrouter_response.strip().splitlines()
 
     for line in lines:
-        match = re.match(r"\[(\d+(\.\d+)?)s?-(\d+(\.\d+)?)s?\]\s+(.+)", line)
+        match = re.match(r"\[(\d+(\.\d+)?)s\s*-\s*(\d+(\.\d+)?)s\]\s+(.+)", line)
         if match:
             start = float(match.group(1))
             end = float(match.group(3))
