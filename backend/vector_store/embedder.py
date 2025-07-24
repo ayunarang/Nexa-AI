@@ -1,46 +1,57 @@
 import requests
-from typing import List
-import os
-from dotenv import load_dotenv
+import numpy as np
+import time
+import random
 
-load_dotenv()
+RENDER_EMBEDDING_URL = "https://embedder-service.onrender.com/embed"
+BATCH_SIZE = 10
+TIMEOUT = 30
+RETRIES = 3
+BACKOFF_FACTOR = 2.0
 
-HF_API_URL = "https://api-inference.huggingface.co/models/intfloat/e5-large-v2"
-HF_API_TOKEN = os.environ.get("HF_API_TOKEN")
+def post_with_retry(url, json, timeout, retries=3, backoff_factor=2.0):
+    for attempt in range(retries):
+        try:
+            response = requests.post(url, json=json, timeout=timeout)
+            response.raise_for_status()
+            return response
+        except requests.RequestException as e:
+            if attempt < retries - 1:
+                sleep_time = backoff_factor ** attempt + random.uniform(0, 1)
+                print(f"Retry {attempt+1} failed: {e}. Retrying in {sleep_time:.1f}s...")
+                time.sleep(sleep_time)
+            else:
+                print(f"Final retry failed: {e}")
+                return None
 
-headers = {
-    "Authorization": f"Bearer {HF_API_TOKEN}",
-    "Content-Type": "application/json"
-}
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    all_embeddings = []
 
-EXPECTED_DIM = 1024  # e5-large-v2 output dim
+    for i in range(0, len(texts), BATCH_SIZE):
+        batch_texts = texts[i:i + BATCH_SIZE]
 
-def embed_texts(texts: List[str], batch_size: int = 16, is_query: bool = False) -> List[List[float]]:
-    """
-    Embed input texts using intfloat/e5-large-v2.
-    If `is_query` is True, inputs are treated as search queries (with 'query: ' prefix),
-    else treated as passages/documents (with 'passage: ' prefix).
-    """
-    prefix = "query: " if is_query else "passage: "
-    prefixed_texts = [prefix + text for text in texts]
+        response = post_with_retry(
+            RENDER_EMBEDDING_URL,
+            json={"texts": batch_texts},
+            timeout=TIMEOUT,
+            retries=RETRIES,
+            backoff_factor=BACKOFF_FACTOR
+        )
 
-    embeddings: List[List[float]] = []
+        if response is None:
+            print(f"Skipping batch {i // BATCH_SIZE + 1} due to repeated failures.")
+            continue
 
-    for i in range(0, len(prefixed_texts), batch_size):
-        batch = prefixed_texts[i: i + batch_size]
-        response = requests.post(HF_API_URL, headers=headers, json={"inputs": batch})
+        try:
+            remote_batch_embeddings = np.array(response.json()["embeddings"])
 
-        if response.status_code != 200:
-            raise RuntimeError(f"HF API error {response.status_code}: {response.text}")
+            norms = np.linalg.norm(remote_batch_embeddings, axis=1, keepdims=True)
+            remote_batch_embeddings = remote_batch_embeddings / np.clip(norms, a_min=1e-9, a_max=None)
 
-        result = response.json()
+            all_embeddings.extend(remote_batch_embeddings.tolist())
 
-        if isinstance(result[0], float):
-            result = [result]
+        except Exception as e:
+            print(f"Error parsing or normalizing batch {i // BATCH_SIZE + 1}: {e}")
+            continue
 
-        for j, emb in enumerate(result):
-            if len(emb) != EXPECTED_DIM:
-                raise ValueError(f"Embedding at index {i + j} has invalid dimension: {len(emb)}")
-            embeddings.append(emb)
-
-    return embeddings
+    return all_embeddings

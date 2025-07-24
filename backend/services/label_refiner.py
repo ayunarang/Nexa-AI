@@ -9,119 +9,69 @@ def prepare_openrouter_prompt(chunks):
         prompt_lines.append(f"[{start:.1f}s-{end:.1f}s] Label: {chunk['label']} | Text: \"{sample_text}\"")
 
     return f"""
-You are an AI agent tasked with refining labeled, timestamped segments from a YouTube transcript. A traditional classifier has generated rough labels, which may be vague, incorrect, or repetitive. The end result should be AT MAX 12-14 total labels with timestamps.
+You are an AI tasked with refining labeled, timestamped segments from a YouTube transcript. An initial classifier has generated rough labels which may be vague, incorrect, or repetitive.
 
-Your task is to correct, rename, and group labels while following these strict rules:
+Your objective is to improve the quality of these labels through correction, renaming, and grouping — producing no more than 12–14 final entries with updated timestamps.
 
----
+--- HARD RULES ---
 
-Hard Rules (Must Follow Exactly):
+1. Sponsorship Labeling:
+Only use "Sponsorship" if the Text explicitly includes language like:
+- "This video is sponsored by..."
+- "Thanks to [brand] for sponsoring..."
+- "In partnership with..."
+- "Paid promotion", "Affiliate links", etc.
+Otherwise, relabel based on actual content.
 
-1. Correct “Sponsorship” Mislabels:  
-   Only assign the label "Sponsorship" if the Text explicitly includes promotional content using language like:  
-   - “This video is sponsored by…”  
-   - “Thanks to [brand] for sponsoring…”  
-   - “In partnership with…”  
-   - “Paid promotion”, “Affiliate links”, etc.  
-   If none of these are present, do not use the label. Instead, re-label it based on actual Text content.
+2. Do NOT Modify Text:
+Do not change or return the Text. Only use it to guide labeling.
 
-2. Do NOT Modify Text:  
-   Do not edit, paraphrase, rewrite, or return the Text.  
-   You may only use Text to understand and improve the label.
+3. No Non-Contiguous Repeats:
+Avoid using the same label for segments that are not adjacent. Rename them using broader or more descriptive labels.
 
-3. Do NOT Repeat Labels Non-Contiguously:  
-   If a label (e.g., "Outfit Ideas") appears more than once but is not directly adjacent, you must rename one or more of them to prevent repetition. Use creative or broader category names instead.
+4. Merge Only Adjacent Segments:
+Only group segments if they are immediately next to each other and clearly related.
 
-4. Merge Only Contiguous Segments:  
-   Segments may only be grouped if they are immediately adjacent and discuss the same or closely related topic. Do not merge distant or similar-but-non-adjacent segments.
+5. Maintain Chronology:
+Keep all segments in strict chronological order. Merged timestamps must be continuous and non-overlapping.
 
-5. Chronological Order Required:  
-   Final output must keep all segments in strict chronological order.  
-   Merged segments must have non-overlapping timestamps.
+--- REFINEMENT RULES ---
 
----
+6. Improve Generic Labels:
+Replace vague labels like "Chat" with something more specific using cues from the Text. For example, rename "Chat" → "Late Night Talk" or "Bookstore Chat".
 
-Refinement Rules (Creative But Constrained):
+7. Rename with Intent:
+Use "Haul" instead of "Product Review" when only items are being shown. Keep "Product Review" only if opinions or analysis are included.
 
-6. Refine Generic Labels:  
-   Replace vague or bland labels with creative, specific 2–3 word labels that accurately reflect the segment content.  
-   Example: Rename “Chat” to “Bookstore Chat” or “Late Night Talk” if relevant.
+8. Avoid Repeating Words Across Labels:
+Don’t reuse the same core word in different labels unless they are merged. Example: Replace "Outing and Chat" and "Outing Plans" with distinct, creative names like "Cafe Vlog", "City Errands".
 
-7. Rename Specific Terms Thoughtfully:  
-   - If a segment labeled "Product Review" is just showing or talking about recently bought items (e.g., clothes, books), rename it to "Haul".  
-   - Keep "Product Review" only when analysis, pros/cons, or opinions are shared about a product.
+--- FINAL CLEANUP INSTRUCTIONS ---
 
-8. Avoid Word Reuse in Labels:  
-   Do not reuse the same word across different labels in non-contiguous segments.  
-   For example, avoid using:  
-   - "Outing and Chat", then "Outing and Haul", then "Outing Plans"  
-   Instead, rename to:  
-   - “Cafe Hangout”, “Shopping Vlog”, “City Errands”
+9. Merge Adjacent Duplicates:
+If the same label appears in consecutive segments, merge them into a single entry with updated timestamps.
 
----
+10. Use Context-Based Names:
+If specific details (e.g., "matcha", "zoo", "new sneakers") appear in the Text, include them in the label name.
 
-Final Cleanup Instructions:
+11. Final Grouping Pass:
+If several adjacent segments reflect a shared theme (e.g., errands, dinner planning), group them under one broader label. Ensure grouped segments form a continuous narrative, and merge small segments (under 60s) into a larger one if relevant.
 
-9. Merge Contiguous Duplicate Labels:  
-   If the same label appears in adjacent segments, merge them into one entry with combined timestamps.  
-   Example:  
-   [00:05 - 00:10] Outfit Ideas  
-   [00:10 - 00:13] Outfit Ideas  
-   → [00:05 - 00:13] Outfit Ideas
+--- STRICT FINAL RULE ---
 
-10. Use Context-Specific Names When Possible:  
-    If Text clearly mentions a unique activity, location, or object (e.g., “matcha”, “zoo”, “new sneakers”), reflect it in the label.  
-    Example: Rename “Food and Chat” → “Matcha Run” or “Cafe Visit”
+You must return a maximum of 12 final entries.
+Use grouping aggressively to reduce fragmentation and deliver cohesive, meaningful labels.
 
-11. Final Grouping:  
-    After refining labels, scan for adjacent entries that are part of the same scene, narrative thread, or loosely related activity.  
-    If multiple adjacent segments revolve around a shared theme or purpose (e.g., errands, food, prep, plans), they must be grouped under a single broader label that summarizes the full section.  
-    Example:  
-    Instead of:  
-    [193.0s - 223.0s] Hungry Errands  
-    [224.2s - 254.2s] Hunger Chat  
-    [254.8s - 284.8s] Plan Adjustments  
-    [284.9s - 314.9s] Dinner Thoughts  
-    [315.0s - 345.0s] Return Plans  
-    → Group them into:  
-    [193.0s - 345.0s] Dinner Plans
+Do not include Text in the output. Only return cleaned, chronological timestamp-label pairs.
 
-    Do not return multiple micro-labels for a continuous sequence. Broad, cohesive grouping is required to reflect the larger context.  
-    Especially combine segments that are only 50–60 seconds long into a larger labeled chunk if they belong to a shared scene or activity.
-
----
-
-After all label refinement is done, perform one final pass over the list:
-- If 2 or more adjacent segments are closely related in content or purpose (even with different labels), merge them under a single meaningful label in such a way to produce only MAXIMUM 12 entries.
-
-**Your goal is to reduce fragmentation and deliver meaningful, cohesive groupings.**
-
-🔴 Strict Final Rule (Cap Limit):
-
-**DO NOT return more than 12 total entries.**  
-Combine adjacent related segments wherever necessary to stay within this range.
-
----
-
-Output Format (Strict):
-
-Return the final list of merged and cleaned segments using this exact format:
+--- OUTPUT FORMAT (STRICT) ---
 
 [start timestamp - end timestamp] Refined Label
 
 Example:
-
-[starting - ending] Outfit Ideas  
-[starting - ending] Cafe Visit  
-[starting - ending] Self Reflection  
-
----
-
-Never return the original or modified Text. Only return formatted refined timestamps and labels.
-
-Return in this format only (where start timestamp and end timestamp represent newly merged timestamps if the label was grouped):
-
-[start timestamp - end timestamp] Refined Label
+[0.0s - 55.0s] Outfit Ideas  
+[55.1s - 120.2s] Cafe Visit  
+[120.3s - 190.5s] Self Reflection
 
 Data:
 {chr(10).join(prompt_lines)}

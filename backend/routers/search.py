@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/search", response_model=EnhancedSearchResult)
 def summarize_search(data: SearchQueryRequest, session_id: str = Query(...)):
     try:
-        top_k = 2
+        top_k = 5
         chunks = search_chunks(session_id, data.video_id, data.query, top_k=top_k)
 
         if not chunks:
@@ -31,30 +31,49 @@ def summarize_search(data: SearchQueryRequest, session_id: str = Query(...)):
         ])
 
         prompt = f"""
-You are a smart assistant helping users search YouTube videos using transcript chunks.
+You are a helpful assistant that searches content in YouTube videos using transcript snippets.
 
-### Instructions:
-- If query is directly answered, respond briefly and list best chunk index: [0].
-- If partially answered, summarize and return top {top_k} indexes: [0, 1].
-- If not answered, say so politely along the lines of "No there was no part about (insert the query request part) in the video but here are some interesting bits you may enjoy!" and list {top_k} relevant indexes as suggestions.
+Instructions:
 
-### Format output as JSON:
+- Interpret the user's query intelligently:
+  - Match direct mentions, indirect answers, or universally accepted explanations of the query.
+  - If any part of the query is clearly answered, implied, or explained, treat it as relevant.
+
+Response Logic:
+
+1. Directly Answered:
+   - If the query is directly answered or clearly addressed in one chunk:
+     - Respond briefly.
+     - Return the best matching index. Example: "indexes": [0]
+
+2. Partially Answered / Multiple Chunks:
+   - If the answer is partially answered or spread across multiple chunks:
+     - Summarize the relevant content.
+     - Return top {top_k} chunk indexes. Example: "indexes": [0, 2, 4]
+
+3. Not Answered:
+   - If the query is not answered at all:
+     - Respond politely. For example:
+       "No, there was no part about '{{query}}' in the video, but here are some interesting bits you may enjoy."
+     - Return 3 relevant indexes from the top {top_k} as suggestions.
+
+Output Format (strict JSON):
 {{
   "answer": "string",
   "indexes": [int],
   "confidence": "high" | "medium" | "low"
 }}
 
-### User Query:
+User Query:
 "{data.query}"
 
-### Top {top_k} Transcript Chunks:
+Top {top_k} Transcript Chunks:
 {formatted_snippets}
 """
 
+
         gpt_response = call_openrouter(prompt)
 
-        # Strip Markdown code block if present
         match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", gpt_response, re.DOTALL)
         if match:
             gpt_response = match.group(1)
