@@ -31,7 +31,6 @@ export default function TimestampDisplay({ videoId, activeAction }) {
 
     setLoading(true);
     try {
-      console.log("Fetching timestamps for video:", videoId);
       const { data } = await axios.post("/timestamps/create", { videoId });
       const rawSegments = data?.segments || [];
 
@@ -39,7 +38,6 @@ export default function TimestampDisplay({ videoId, activeAction }) {
       setSegments(mergedSegments);
       toast.success("Timestamps Generated! You can copy them.")
     } catch (err) {
-      console.error("Error while fetching timestamps:", err);
       toast.error("Failed to fetch. Please try again.");
       setSegments([]);
     } finally {
@@ -85,12 +83,13 @@ export default function TimestampDisplay({ videoId, activeAction }) {
             {segments.map((seg, index) => (
               <div
                 key={index}
-                className="flex justify-between items-center bg-[#2a2a40] px-4 py-2 rounded-lg"
+                className="flex justify-between items-center bg-[#2a2a40] px-4 py-2 rounded-lg gap-2"
               >
-                <div className="text-purple-300 font-mono text-sm">
-                  [{formatTime(seg.start)} - {formatTime(seg.end)}]
+                <div className="text-purple-300 font-mono text-sm justify-start flex flex-col sm:flex-row items-center">
+                  <span>[{formatTime(seg.start)} -</span>
+                  <span>{formatTime(seg.end)}]</span>
                 </div>
-                <div className="text-white font-semibold text-sm">
+                <div className="text-white font-semibold text-sm justify-end text-right">
                   {seg.label}
                 </div>
               </div>

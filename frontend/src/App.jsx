@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TranscriptInput from "./components/TranscriptInput";
 import QuerySearch from "./components/QuerySearch";
 import TimestampDisplay from "./components/TimestampDisplay";
@@ -15,6 +15,9 @@ export default function App() {
   const [player, setPlayer] = useState(null);
   const [activeAction, setActiveAction] = useState("");
   const [loading, setLoading] = useState(false);
+  const timestampRef = useRef(null);
+  const queryRef = useRef(null);
+
 
   useEffect(() => {
     initializeSession();
@@ -22,7 +25,18 @@ export default function App() {
 
   const handleTimestampsClick = () => {
     setActiveAction("timestamps");
+    setTimeout(() => {
+      timestampRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 250);
   };
+
+  const handleAskClick = () => {
+    setActiveAction("ask");
+    setTimeout(() => {
+      queryRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 250);
+  };
+
 
   return (
     <main className="min-h-screen bg-[#0b0b15] text-white px-4 md:px-8 py-20 font-sans">
@@ -63,7 +77,7 @@ export default function App() {
                     <em className="text-white font-medium"> Key Moments</em>.
                   </p>
                   <p>
-                    Have a question? Just type it — we’ll find the exact part of the video that answers it.
+                    Have a question? Just type it. We’ll find the exact part of the video that answers it.
                   </p>
                   <p>
                     Click any timestamp to jump instantly. Fast. Smart. Effortless.
@@ -93,7 +107,7 @@ export default function App() {
                         <ActionButton
                           label="Ask Anything About This Video"
                           active={activeAction === "ask"}
-                          onClick={() => setActiveAction("ask")}
+                          onClick={handleAskClick}
                         />
                       </div>
                     </div>
@@ -115,6 +129,7 @@ export default function App() {
 
       {activeAction === "ask" && (
         <section
+          ref={queryRef}
           role="region"
           aria-label="Query Search"
           className="max-w-5xl mx-auto mt-12 bg-[#151526] md:p-6 p-4 rounded-2xl shadow-lg border border-[#292946]"
@@ -125,6 +140,7 @@ export default function App() {
 
       {activeAction === "timestamps" && (
         <section
+          ref={timestampRef}
           role="region"
           aria-label="Timestamp Display"
           className="max-w-5xl mx-auto mt-12"
