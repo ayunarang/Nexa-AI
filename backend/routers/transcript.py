@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from models.schema import TranscriptRequest, TranscriptChunk, ClearSessionRequest
 from utils.transcript_utils import fetch_and_chunk_transcript
 from session_store import init_session, clear_session, get_session_index, get_session_metadata
-from vector_store.embedder import embed_texts
+from vector_store.embedder import embed_texts  
 from vector_store.faiss_store import add_to_index, get_faiss_index
 
 from uuid import uuid4
@@ -21,9 +21,9 @@ def fetch_transcript_and_store(data: TranscriptRequest):
         for chunk in chunks:
             chunk['video_id'] = video_id
 
-        # Step 2: Generate embeddings
+        # Step 2: Generate embeddings (passage mode)
         texts = [chunk['text'] for chunk in chunks]
-        embeddings = embed_texts(texts)
+        embeddings = embed_texts(texts, is_query=False)
         if not embeddings:
             raise ValueError("No embeddings generated.")
 
@@ -31,9 +31,9 @@ def fetch_transcript_and_store(data: TranscriptRequest):
         embedding_dim = len(embeddings[0])
         init_session(session_id, embedding_dim)
 
-        index = get_faiss_index(dimension=len(embeddings[0]))
+        index = get_faiss_index(dimension=embedding_dim)
         session_index = get_session_index(session_id)
-        session_index.d = index.d 
+        session_index.d = index.d
 
         metadata = get_session_metadata(session_id)
         if video_id in metadata:

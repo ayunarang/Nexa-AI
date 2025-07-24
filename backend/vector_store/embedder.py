@@ -1,22 +1,33 @@
 import requests
 from typing import List
 import os
+from dotenv import load_dotenv
 
-HF_API_URL = "https://api-inference.huggingface.co/models/BAAI/bge-base-en-v1.5"
-HF_API_TOKEN = os.environ.get("HF_API_TOKEN") 
+load_dotenv()
+
+HF_API_URL = "https://api-inference.huggingface.co/models/intfloat/e5-large-v2"
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN")
 
 headers = {
     "Authorization": f"Bearer {HF_API_TOKEN}",
     "Content-Type": "application/json"
 }
 
-EXPECTED_DIM = 768  
+EXPECTED_DIM = 1024  # e5-large-v2 output dim
 
-def embed_texts(texts: List[str], batch_size: int = 16) -> List[List[float]]:
+def embed_texts(texts: List[str], batch_size: int = 16, is_query: bool = False) -> List[List[float]]:
+    """
+    Embed input texts using intfloat/e5-large-v2.
+    If `is_query` is True, inputs are treated as search queries (with 'query: ' prefix),
+    else treated as passages/documents (with 'passage: ' prefix).
+    """
+    prefix = "query: " if is_query else "passage: "
+    prefixed_texts = [prefix + text for text in texts]
+
     embeddings: List[List[float]] = []
 
-    for i in range(0, len(texts), batch_size):
-        batch = texts[i: i + batch_size]
+    for i in range(0, len(prefixed_texts), batch_size):
+        batch = prefixed_texts[i: i + batch_size]
         response = requests.post(HF_API_URL, headers=headers, json={"inputs": batch})
 
         if response.status_code != 200:
