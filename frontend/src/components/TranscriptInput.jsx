@@ -8,7 +8,9 @@ export default function TranscriptInput({
   setVideoId,
   setLoading,
   loading,
-  success
+  success,
+  setActiveAction,
+  activeAction
 }) {
   const [error, setError] = useState("");
 
@@ -16,6 +18,9 @@ export default function TranscriptInput({
     if (loading) return;
 
     setLoading(true);
+    if(!activeAction===""){
+      setActiveAction("")
+    }
     setError("");
 
     try {
@@ -63,6 +68,11 @@ export default function TranscriptInput({
           className={`${loading ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
             } text-white font-semibold py-2 md:py-3 text-sm md:px-5 px-3 rounded-lg transition whitespace-nowrap`}
           aria-label="Fetch transcript for video URL"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !loading) {
+              handleFetchTranscript();
+            }
+          }}
         >
           {loading ? "Loading..." : "Try URL"}
         </button>

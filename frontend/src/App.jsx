@@ -30,7 +30,7 @@ export default function App() {
         <h1 className="text-xl md:text-4xl font-extrabold leading-tight mb-4">
           AI-Powered YouTube Timestamps & Content Finder
           <br />
-          <span className="text-purple-400">Just paste a link — we do the rest.</span>
+          <span className="text-purple-400">Just paste a link! We do the rest.</span>
         </h1>
       </section>
 
@@ -45,6 +45,8 @@ export default function App() {
               setLoading={setLoading}
               loading={loading}
               success={success}
+              setActiveAction={setActiveAction}
+              activeAction={activeAction}
             />
 
             <div className="relative min-h-[150px]">
