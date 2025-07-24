@@ -32,13 +32,12 @@ def extract_video_id(url: str) -> str:
 def normalize_transcript_data(raw_data):
     return [
         {
-            'text': getattr(entry, 'text', ''),
-            'start': getattr(entry, 'start', 0),
-            'duration': getattr(entry, 'duration', 0)
+            'text': entry.get('text', '') if isinstance(entry, dict) else getattr(entry, 'text', ''),
+            'start': entry.get('start', 0) if isinstance(entry, dict) else getattr(entry, 'start', 0),
+            'duration': entry.get('duration', 0) if isinstance(entry, dict) else getattr(entry, 'duration', 0),
         }
         for entry in raw_data
     ]
-
 
 def fetch_transcript_from_scrapingdog(video_id: str, retries: int = 3, delay: int = 2):
     if not SCRAPINGDOG_API_KEY:
