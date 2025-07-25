@@ -64,7 +64,7 @@ export default function QuerySearch({ videoId, player }) {
 
   return (
     <section className="w-full max-w-3xl mx-auto">
-      <h2 className="md:text-2xl text-lg font-semibold mb-4 text-purple-200">
+      <h2 className="md:text-2xl text-lg font-semibold mb-4 text-white">
         Type What You Would Like to See
       </h2>
 
@@ -78,8 +78,7 @@ export default function QuerySearch({ videoId, player }) {
       {!hasSearched && !isSearching && (
         <p className="text-sm text-gray-500 mb-4">
           Type a question - “Did they mention...” or “What was the part
-          about...” and hit Search. We'll help you find
-          exactly what you're looking for!
+          about...” and hit Search.
         </p>
       )}
 

@@ -55,7 +55,7 @@ export default function TranscriptInput({
         <input
           id="video-url"
           type="text"
-          placeholder="Paste YouTube video URL..."
+          placeholder="Paste YouTube video URL"
           className="w-full px-4 py-3 rounded-lg bg-[#1e1b2e] text-white border border-purple-500 placeholder-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -71,7 +71,7 @@ export default function TranscriptInput({
           onClick={handleFetchTranscript}
           disabled={loading}
           className={`${loading ? "bg-purple-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700"
-            } text-white font-semibold py-2 md:py-3 text-sm md:px-5 px-3 rounded-lg transition whitespace-nowrap`}
+            } text-white font-semibold py-3 md:py-3 text-sm md:px-5 px-3 rounded-lg transition whitespace-nowrap`}
           aria-label="Fetch transcript for video URL"
         >
           {loading ? "Loading..." : "Try URL"}

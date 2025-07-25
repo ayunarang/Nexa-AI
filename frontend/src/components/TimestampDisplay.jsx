@@ -85,7 +85,7 @@ export default function TimestampDisplay({ videoId, activeAction }) {
                 key={index}
                 className="flex justify-between items-center bg-[#2a2a40] px-4 py-2 rounded-lg gap-2"
               >
-                <div className="text-purple-300 font-mono text-sm justify-start flex flex-col sm:flex-row items-center">
+                <div className="text-purple-300 font-mono text-sm justify-start flex flex-col sm:flex-row flex-nowrap items-center">
                   <span>[{formatTime(seg.start)} -</span>
                   <span>{formatTime(seg.end)}]</span>
                 </div>
